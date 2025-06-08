@@ -1,0 +1,71 @@
+import geocoder
+import folium
+import webbrowser
+
+ips_path = "ips.list"
+map_path = "map.html"
+
+#MAP GENERATOR
+class map_generator:
+
+    points_on_map = {}
+    map_object = None
+
+    #ADD A CITY TO SIGN ON THE MAP
+    def add_city(self, city, coordinates):
+        if city in self.points_on_map.keys():
+            return True
+        else:
+            self.points_on_map[city] = coordinates
+            return True
+
+    #GENERATE THE MAP
+    def generate_map(self):
+
+        self.map_object = folium.Map(zoom_start=5)
+
+        for city in self.points_on_map.keys():
+            
+            folium.Marker(
+                location=[self.points_on_map[city][0],self.points_on_map[city][1]],
+                popup=city,
+                icon=folium.Icon(icon="cloud"),
+            ).add_to(self.map_object)
+
+        self.map_object.save(map_path)
+        return map_path
+
+#WRAPPER FOR OPEN
+def import_(path):
+    with open(path) as file:
+        return file.read()
+
+#GET THE CITY ASSOCIATED TO THE IP
+def lookup_ip_location(ip):
+    infos = geocoder.ip(ip)
+    return infos.city, infos.latlng
+
+def open_link(path):
+    webbrowser.open(path)
+
+# DATA FORMATTATION
+def main():
+
+    #MAP MANAGER
+    m = map_generator()
+
+    #IMPORTS THE IPS AND GET THEIR LOCATIONS
+    ips = import_(ips_path).split("\n")
+    for index in range(0, len(ips)):
+        city, coordinates = lookup_ip_location(ips[index])
+        m.add_city(city, coordinates)
+
+    #OPEN THE GENERATED MAP
+    open_link(m.generate_map())
+    
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as e:
+        print(e)
